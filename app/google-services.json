@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "463160141752",
+    "project_id": "prototype-8c87e",
+    "storage_bucket": "prototype-8c87e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:463160141752:android:2fc31fdf81180cb04ed14d",
+        "android_client_info": {
+          "package_name": "com.rostry.prototype"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBtLiQRYHW4vi7PlfENR1AYi-PNuIUYO2s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
