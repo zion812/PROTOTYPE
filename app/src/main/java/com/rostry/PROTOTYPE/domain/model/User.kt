@@ -7,5 +7,6 @@ data class User(
     val photoUrl: String,
     val farmName: String,
     val userType: String = "FARMER",
+    val idToken: String = "",
     val dirty: Boolean = false
 )

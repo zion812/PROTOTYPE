@@ -23,6 +23,10 @@ class GoogleAuthHelper @Inject constructor(
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
 
     private val googleSignInClient: GoogleSignInClient by lazy {
+        // WEB_CLIENT_ID placeholder: Replace R.string.default_web_client_id
+        // with the OAuth 2.0 web client ID from Google Cloud Console.
+        // The google-services plugin auto-generates this string resource
+        // from the web client ID in google-services.json.
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestIdToken(context.getString(R.string.default_web_client_id))
             .requestEmail()

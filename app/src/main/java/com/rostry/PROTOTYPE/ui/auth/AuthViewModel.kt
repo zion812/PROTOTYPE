@@ -37,7 +37,7 @@ class AuthViewModel @Inject constructor(
 
     fun getSignInIntent(): Intent = googleAuthHelper.getSignInIntent()
 
-    fun signInWithGoogle(data: Intent?) {
+    fun handleSignInResult(data: Intent?) {
         _authState.value = AuthUiState.Loading
         try {
             val task = GoogleSignIn.getSignedInAccountFromIntent(data)
@@ -56,10 +56,11 @@ class AuthViewModel @Inject constructor(
                                 existingUser.copy(
                                     displayName = firebaseUser.displayName ?: existingUser.displayName,
                                     photoUrl = firebaseUser.photoUrl?.toString() ?: existingUser.photoUrl,
-                                    email = firebaseUser.email ?: existingUser.email
+                                    email = firebaseUser.email ?: existingUser.email,
+                                    idToken = idToken
                                 )
                             } else {
-                                firebaseUser.toDomainUser()
+                                firebaseUser.toDomainUser(idToken = idToken)
                             }
 
                             userRepository.saveUser(user)
@@ -85,7 +86,6 @@ class AuthViewModel @Inject constructor(
     }
 
     fun signOut() {
-        // TODO TEST_AUTH_1: Sign out, sign in with different Google account, verify data isolation
         googleAuthHelper.signOut()
         _authState.value = AuthUiState.Idle
     }
@@ -95,11 +95,12 @@ class AuthViewModel @Inject constructor(
     }
 }
 
-private fun FirebaseUser.toDomainUser(): User = User(
+private fun FirebaseUser.toDomainUser(idToken: String = ""): User = User(
     userId = uid.hashCode().toLong(),
     displayName = displayName ?: "",
     email = email ?: "",
     photoUrl = photoUrl?.toString() ?: "",
     farmName = "",
-    userType = "FARMER"
+    userType = "FARMER",
+    idToken = idToken
 )

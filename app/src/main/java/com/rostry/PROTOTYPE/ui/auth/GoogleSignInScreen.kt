@@ -17,11 +17,15 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -37,18 +41,25 @@ fun GoogleSignInScreen(
     val authState by viewModel.authState.collectAsState()
     val context = LocalContext.current
 
+    val snackbarHostState = remember { SnackbarHostState() }
+
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
-            viewModel.signInWithGoogle(result.data)
+            viewModel.handleSignInResult(result.data)
         }
     }
 
+    val currentError = (authState as? AuthUiState.Error)?.message
+    LaunchedEffect(currentError) {
+        currentError?.let { snackbarHostState.showSnackbar(it) }
+    }
+
     LaunchedEffect(authState) {
-        val state = authState
-        if (state is AuthUiState.Success) {
-            if (state.user.farmName.isBlank()) {
+        if (authState is AuthUiState.Success) {
+            val user = (authState as AuthUiState.Success).user
+            if (user.farmName.isBlank()) {
                 onNavigateToOnboarding()
             } else {
                 onNavigateToDashboard()
@@ -56,52 +67,52 @@ fun GoogleSignInScreen(
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(
-            text = "Welcome to Rostry",
-            style = MaterialTheme.typography.headlineLarge
-        )
+    Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = "Welcome to Rostry",
+                style = MaterialTheme.typography.headlineLarge
+            )
 
-        Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
-        when (val state = authState) {
-            is AuthUiState.Loading -> {
-                CircularProgressIndicator()
-            }
+            when (authState) {
+                is AuthUiState.Loading -> {
+                    CircularProgressIndicator()
+                }
 
-            is AuthUiState.Error -> {
-                Text(
-                    text = state.message,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                GoogleSignInButton(
-                    enabled = true,
-                    onClick = {
-                        viewModel.resetState()
-                        launcher.launch(viewModel.getSignInIntent())
-                    }
-                )
-            }
+                is AuthUiState.Error -> {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    GoogleSignInButton(
+                        enabled = true,
+                        onClick = {
+                            viewModel.resetState()
+                            launcher.launch(viewModel.getSignInIntent())
+                        }
+                    )
+                }
 
-            is AuthUiState.Success -> {
-                CircularProgressIndicator()
-            }
+                is AuthUiState.Success -> {
+                    CircularProgressIndicator()
+                }
 
-            is AuthUiState.Idle -> {
-                GoogleSignInButton(
-                    enabled = true,
-                    onClick = {
-                        launcher.launch(viewModel.getSignInIntent())
-                    }
-                )
+                is AuthUiState.Idle -> {
+                    GoogleSignInButton(
+                        enabled = true,
+                        onClick = {
+                            launcher.launch(viewModel.getSignInIntent())
+                        }
+                    )
+                }
             }
         }
     }

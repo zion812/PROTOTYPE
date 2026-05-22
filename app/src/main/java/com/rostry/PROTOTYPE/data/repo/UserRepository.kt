@@ -34,6 +34,7 @@ class UserRepository @Inject constructor(
         photoUrl = photoUrl,
         farmName = farmName,
         userType = userType,
+        idToken = idToken,
         dirty = dirty
     )
 
@@ -44,6 +45,7 @@ class UserRepository @Inject constructor(
         photoUrl = photoUrl,
         farmName = farmName,
         userType = userType,
+        idToken = idToken,
         dirty = dirty
     )
 
