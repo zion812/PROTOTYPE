@@ -4,7 +4,6 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
-import com.rostry.prototype.data.local.dao.OutboxDao
 import com.rostry.prototype.data.repo.FarmRepository
 import com.rostry.prototype.data.repo.SyncRepository
 import com.rostry.prototype.domain.model.DailyLog
@@ -13,27 +12,23 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import java.util.Calendar
 import javax.inject.Inject
 
 @HiltViewModel
 class FarmViewModel @Inject constructor(
     private val farmRepository: FarmRepository,
-    private val syncRepository: SyncRepository,
-    private val outboxDao: OutboxDao
+    private val syncRepository: SyncRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(FarmUiState())
     val uiState: StateFlow<FarmUiState> = _uiState.asStateFlow()
 
-    private val userId: Long
-        get() = FirebaseAuth.getInstance().currentUser?.uid?.hashCode()?.toLong() ?: 0L
+    private val userId: String
+        get() = FirebaseAuth.getInstance().currentUser?.uid ?: ""
 
     init {
         loadAssets()
-        observePendingCount()
         loadTodayLog()
     }
 
@@ -42,14 +37,6 @@ class FarmViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(isLoading = true)
             farmRepository.getAssets(userId).collect { assets ->
                 _uiState.value = _uiState.value.copy(assets = assets, isLoading = false)
-            }
-        }
-    }
-
-    private fun observePendingCount() {
-        viewModelScope.launch {
-            outboxDao.observePendingCount().collect { count ->
-                _uiState.value = _uiState.value.copy(pendingSyncCount = count)
             }
         }
     }
@@ -69,17 +56,20 @@ class FarmViewModel @Inject constructor(
     ) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-            val today = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+            val cal = Calendar.getInstance().apply {
+                set(Calendar.HOUR_OF_DAY, 0)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }
             val log = DailyLog(
-                logId = System.currentTimeMillis(),
                 farmerId = userId,
-                assetId = null,
-                logDate = today,
+                logDate = cal.timeInMillis,
                 feedKg = feedKg,
                 mortalityCount = mortalityCount,
-                photoUrl = photoUri?.toString() ?: "",
-                notes = notes,
-                dirty = true
+                photoUrl = photoUri?.toString(),
+                notes = notes.ifBlank { null },
+                createdAt = System.currentTimeMillis()
             )
             val result = farmRepository.createDailyLog(log)
             result.fold(

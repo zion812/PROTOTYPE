@@ -49,18 +49,17 @@ class AuthViewModel @Inject constructor(
                     val result = googleAuthHelper.firebaseAuthWithGoogle(idToken)
                     _authState.value = result.fold(
                         onSuccess = { firebaseUser ->
-                            val userId = firebaseUser.uid.hashCode().toLong()
+                            val userId = firebaseUser.uid
                             val existingUser = userRepository.getUser(userId).first()
 
                             val user = if (existingUser != null) {
                                 existingUser.copy(
                                     displayName = firebaseUser.displayName ?: existingUser.displayName,
                                     photoUrl = firebaseUser.photoUrl?.toString() ?: existingUser.photoUrl,
-                                    email = firebaseUser.email ?: existingUser.email,
-                                    idToken = idToken
+                                    email = firebaseUser.email ?: existingUser.email
                                 )
                             } else {
-                                firebaseUser.toDomainUser(idToken = idToken)
+                                firebaseUser.toDomainUser()
                             }
 
                             userRepository.saveUser(user)
@@ -81,7 +80,7 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    suspend fun checkNeedsOnboarding(userId: Long): Boolean {
+    suspend fun checkNeedsOnboarding(userId: String): Boolean {
         return userRepository.getUser(userId).first()?.farmName.isNullOrBlank()
     }
 
@@ -95,12 +94,12 @@ class AuthViewModel @Inject constructor(
     }
 }
 
-private fun FirebaseUser.toDomainUser(idToken: String = ""): User = User(
-    userId = uid.hashCode().toLong(),
+private fun FirebaseUser.toDomainUser(): User = User(
+    userId = uid,
     displayName = displayName ?: "",
     email = email ?: "",
     photoUrl = photoUrl?.toString() ?: "",
     farmName = "",
     userType = "FARMER",
-    idToken = idToken
+    createdAt = System.currentTimeMillis()
 )

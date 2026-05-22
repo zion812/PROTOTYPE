@@ -14,10 +14,9 @@ import com.rostry.prototype.domain.model.STATUS_PENDING
 import com.rostry.prototype.domain.model.ENTITY_TYPE_FARM_ASSET
 import com.rostry.prototype.domain.model.ENTITY_TYPE_DAILY_LOG
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import java.util.Calendar
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -43,11 +42,10 @@ class FarmRepository @Inject constructor(
         outboxDao.insert(outbox)
         Log.d(TAG, "Outbox entry created for FarmAsset: ${entity.assetId}")
 
-        // TODO TEST_OFFLINE_1: Airplane mode, add bird, kill app, reopen, verify persistence
-        entity.assetId.toString()
+        entity.assetId
     }
 
-    fun getAssets(farmerId: Long): Flow<List<FarmAsset>> =
+    fun getAssets(farmerId: String): Flow<List<FarmAsset>> =
         farmAssetDao.getByFarmer(farmerId).map { list -> list.map { it.toDomain() } }
 
     suspend fun createDailyLog(log: DailyLog): Result<String> = runCatching {
@@ -65,16 +63,22 @@ class FarmRepository @Inject constructor(
         outboxDao.insert(outbox)
         Log.d(TAG, "Outbox entry created for DailyLog: ${entity.logId}")
 
-        // TODO TEST_OFFLINE_2: Add daily log offline, reconnect, tap sync, verify Firestore + Telegram
-        entity.logId.toString()
+        entity.logId
     }
 
-    fun getDailyLogs(farmerId: Long): Flow<List<DailyLog>> =
+    fun getDailyLogs(farmerId: String): Flow<List<DailyLog>> =
         dailyLogDao.getByFarmer(farmerId).map { list -> list.map { it.toDomain() } }
 
-    suspend fun getTodayLog(farmerId: Long): DailyLog? {
-        val today = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
-        return dailyLogDao.getByDate(farmerId, today)?.toDomain()
+    suspend fun getTodayLog(farmerId: String): DailyLog? {
+        val cal = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val dayStart = cal.timeInMillis
+        val dayEnd = dayStart + 86_400_000L
+        return dailyLogDao.getForDate(farmerId, dayStart, dayEnd).first()?.toDomain()
     }
 
     private fun FarmAsset.toEntity() = FarmAssetEntity(
@@ -88,7 +92,6 @@ class FarmRepository @Inject constructor(
     )
 
     private fun FarmAssetEntity.toDomain() = FarmAsset(
-        // TODO TEST_IMAGE_1: Verify tg:// URI displays image after upload
         assetId = assetId,
         farmerId = farmerId,
         name = name,
@@ -107,6 +110,7 @@ class FarmRepository @Inject constructor(
         mortalityCount = mortalityCount,
         photoUrl = photoUrl,
         notes = notes,
+        createdAt = createdAt,
         dirty = dirty
     )
 
@@ -119,6 +123,7 @@ class FarmRepository @Inject constructor(
         mortalityCount = mortalityCount,
         photoUrl = photoUrl,
         notes = notes,
+        createdAt = createdAt,
         dirty = dirty
     )
 

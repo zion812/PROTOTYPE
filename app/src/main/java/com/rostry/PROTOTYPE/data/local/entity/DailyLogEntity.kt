@@ -3,6 +3,7 @@ package com.rostry.prototype.data.local.entity
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import java.util.UUID
 
 @Entity(
     tableName = "daily_logs",
@@ -13,13 +14,14 @@ import androidx.room.PrimaryKey
     ]
 )
 data class DailyLogEntity(
-    @PrimaryKey val logId: Long,
-    val farmerId: Long,
-    val assetId: Long?,
-    val logDate: String,
-    val feedKg: Double,
-    val mortalityCount: Int,
-    val photoUrl: String,
-    val notes: String,
-    val dirty: Boolean
+    @PrimaryKey val logId: String = UUID.randomUUID().toString(),
+    val farmerId: String,
+    val assetId: String? = null,
+    val logDate: Long,
+    val feedKg: Double? = null,
+    val mortalityCount: Int = 0,
+    val photoUrl: String? = null,
+    val notes: String? = null,
+    val createdAt: Long,
+    val dirty: Boolean = true
 )

@@ -1,11 +1,13 @@
 package com.rostry.prototype.domain.model
 
+import java.util.UUID
+
 data class FarmAsset(
-    val assetId: Long,
-    val farmerId: Long,
+    val assetId: String = UUID.randomUUID().toString(),
+    val farmerId: String,
     val name: String,
     val breed: String,
-    val imageUrl: String,
+    val imageUrl: String? = null,
     val createdAt: Long,
-    val dirty: Boolean
+    val dirty: Boolean = true
 )

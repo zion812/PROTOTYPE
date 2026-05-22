@@ -1,13 +1,16 @@
 package com.rostry.prototype.domain.model
 
+import java.util.UUID
+
 data class DailyLog(
-    val logId: Long,
-    val farmerId: Long,
-    val assetId: Long?,
-    val logDate: String,
-    val feedKg: Double,
-    val mortalityCount: Int,
-    val photoUrl: String,
-    val notes: String,
-    val dirty: Boolean
+    val logId: String = UUID.randomUUID().toString(),
+    val farmerId: String,
+    val assetId: String? = null,
+    val logDate: Long,
+    val feedKg: Double? = null,
+    val mortalityCount: Int = 0,
+    val photoUrl: String? = null,
+    val notes: String? = null,
+    val createdAt: Long,
+    val dirty: Boolean = true
 )

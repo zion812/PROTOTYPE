@@ -5,12 +5,12 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "users")
 data class UserEntity(
-    @PrimaryKey val userId: Long,
+    @PrimaryKey val userId: String,
     val displayName: String,
     val email: String,
     val photoUrl: String,
     val farmName: String,
     val userType: String = "FARMER",
-    val idToken: String = "",
-    val dirty: Boolean = false
+    val createdAt: Long,
+    val dirty: Boolean
 )

@@ -38,8 +38,8 @@ class OnboardingViewModel @Inject constructor(
     private val _state = MutableStateFlow(OnboardingUiState())
     val state: StateFlow<OnboardingUiState> = _state.asStateFlow()
 
-    private val userId: Long
-        get() = FirebaseAuth.getInstance().currentUser?.uid?.hashCode()?.toLong() ?: 0L
+    private val userId: String
+        get() = FirebaseAuth.getInstance().currentUser?.uid ?: ""
 
     private val firebaseUid: String
         get() = FirebaseAuth.getInstance().currentUser?.uid ?: ""
@@ -117,13 +117,11 @@ class OnboardingViewModel @Inject constructor(
             _state.value = _state.value.copy(isSaving = true, saveError = null)
 
             val asset = FarmAsset(
-                assetId = System.currentTimeMillis(),
                 farmerId = userId,
                 name = name,
                 breed = _state.value.breed.trim(),
-                imageUrl = _state.value.photoUri?.toString() ?: "",
-                createdAt = System.currentTimeMillis(),
-                dirty = true
+                imageUrl = _state.value.photoUri?.toString(),
+                createdAt = System.currentTimeMillis()
             )
 
             val result = farmRepository.createAsset(asset)

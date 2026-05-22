@@ -9,6 +9,8 @@ import com.rostry.prototype.BuildConfig
 import com.rostry.prototype.data.local.dao.DailyLogDao
 import com.rostry.prototype.data.local.dao.FarmAssetDao
 import com.rostry.prototype.data.local.dao.OutboxDao
+import com.rostry.prototype.data.local.entity.DailyLogEntity
+import com.rostry.prototype.data.local.entity.FarmAssetEntity
 import com.rostry.prototype.data.local.entity.OutboxEntity
 import com.rostry.prototype.domain.model.DailyLog
 import com.rostry.prototype.domain.model.ENTITY_TYPE_DAILY_LOG
@@ -53,7 +55,7 @@ class SyncRepository @Inject constructor(
         val asset = gson.fromJson(item.payloadJson, FarmAsset::class.java)
         Log.d(TAG, "Syncing FarmAsset ${asset.assetId}: ${asset.name}")
 
-        var imageUrl = asset.imageUrl
+        var imageUrl = asset.imageUrl ?: ""
         if (imageUrl.startsWith("file://")) {
             val file = File(imageUrl.removePrefix("file://"))
             Log.d(TAG, "Uploading image for FarmAsset ${asset.assetId}")
@@ -63,20 +65,26 @@ class SyncRepository @Inject constructor(
             Log.d(TAG, "Image resolved to: $imageUrl")
         }
 
-        val updatedAsset = asset.copy(imageUrl = imageUrl, dirty = false)
-
-        val data = gson.toFirestoreMap(updatedAsset)
+        val data = gson.toFirestoreMap(
+            asset.copy(imageUrl = imageUrl, dirty = false)
+        )
         firestore.collection("farm_assets")
-            .document(updatedAsset.assetId.toString())
+            .document(asset.assetId)
             .set(data)
             .await()
         Log.d(TAG, "FarmAsset ${asset.assetId} pushed to Firestore")
 
-        val localEntity = farmAssetDao.getById(asset.assetId)
-        if (localEntity != null) {
-            farmAssetDao.update(localEntity.copy(imageUrl = imageUrl, dirty = false))
-            Log.d(TAG, "Local FarmAsset ${asset.assetId} updated with resolved URL")
-        }
+        farmAssetDao.upsert(
+            FarmAssetEntity(
+                assetId = asset.assetId,
+                farmerId = asset.farmerId,
+                name = asset.name,
+                breed = asset.breed,
+                imageUrl = imageUrl.ifEmpty { null },
+                createdAt = asset.createdAt,
+                dirty = false
+            )
+        )
         outboxDao.markCompleted(item.outboxId)
     }
 
@@ -84,7 +92,7 @@ class SyncRepository @Inject constructor(
         val log = gson.fromJson(item.payloadJson, DailyLog::class.java)
         Log.d(TAG, "Syncing DailyLog ${log.logId}")
 
-        var photoUrl = log.photoUrl
+        var photoUrl = log.photoUrl ?: ""
         if (photoUrl.startsWith("file://")) {
             val file = File(photoUrl.removePrefix("file://"))
             Log.d(TAG, "Uploading photo for DailyLog ${log.logId}")
@@ -94,20 +102,29 @@ class SyncRepository @Inject constructor(
             Log.d(TAG, "Photo resolved to: $photoUrl")
         }
 
-        val updatedLog = log.copy(photoUrl = photoUrl, dirty = false)
-
-        val data = gson.toFirestoreMap(updatedLog)
+        val data = gson.toFirestoreMap(
+            log.copy(photoUrl = photoUrl, dirty = false)
+        )
         firestore.collection("daily_logs")
-            .document(updatedLog.logId.toString())
+            .document(log.logId)
             .set(data)
             .await()
         Log.d(TAG, "DailyLog ${log.logId} pushed to Firestore")
 
-        val localEntity = dailyLogDao.getById(log.logId)
-        if (localEntity != null) {
-            dailyLogDao.upsert(localEntity.copy(photoUrl = photoUrl, dirty = false))
-            Log.d(TAG, "Local DailyLog ${log.logId} updated with resolved URL")
-        }
+        dailyLogDao.upsert(
+            DailyLogEntity(
+                logId = log.logId,
+                farmerId = log.farmerId,
+                assetId = log.assetId,
+                logDate = log.logDate,
+                feedKg = log.feedKg,
+                mortalityCount = log.mortalityCount,
+                photoUrl = photoUrl.ifEmpty { null },
+                notes = log.notes,
+                createdAt = log.createdAt,
+                dirty = false
+            )
+        )
         outboxDao.markCompleted(item.outboxId)
     }
 

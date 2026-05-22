@@ -41,7 +41,7 @@ fun AuthNavWrapper(
     if (loggedIn) {
         LaunchedEffect(Unit) {
             val firebaseUser = FirebaseAuth.getInstance().currentUser ?: return@LaunchedEffect
-            val userId = firebaseUser.uid.hashCode().toLong()
+            val userId = firebaseUser.uid
             val needsOnboarding = viewModel.checkNeedsOnboarding(userId)
             if (needsOnboarding) {
                 onNavigateToOnboarding()

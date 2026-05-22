@@ -72,7 +72,7 @@ class DebugViewModel @Inject constructor(
     fun loadOutbox() {
         viewModelScope.launch {
             _outboxItems.value = withContext(Dispatchers.IO) {
-                outboxDao.getAll()
+                outboxDao.getPending()
             }
         }
     }

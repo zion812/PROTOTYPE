@@ -1,9 +1,9 @@
 package com.rostry.prototype.domain.model
 
 data class OutboxItem(
-    val outboxId: Long,
+    val outboxId: String,
     val entityType: String,
-    val entityId: Long,
+    val entityId: String,
     val payloadJson: String,
     val status: String,
     val createdAt: Long

@@ -5,6 +5,7 @@ import com.rostry.prototype.data.local.dao.UserDao
 import com.rostry.prototype.data.local.entity.UserEntity
 import com.rostry.prototype.domain.model.User
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -18,11 +19,11 @@ class UserRepository @Inject constructor(
         Log.d(TAG, "User saved: ${user.userId}")
     }
 
-    fun getUser(userId: Long): Flow<User?> =
-        userDao.observeById(userId).map { it?.toDomain() }
+    fun getUser(userId: String): Flow<User?> =
+        userDao.getById(userId).map { it?.toDomain() }
 
-    suspend fun updateFarmName(userId: Long, farmName: String): Result<Unit> = runCatching {
-        val entity = userDao.getById(userId) ?: throw Exception("User not found")
+    suspend fun updateFarmName(userId: String, farmName: String): Result<Unit> = runCatching {
+        val entity = userDao.getById(userId).first() ?: throw Exception("User not found")
         userDao.upsert(entity.copy(farmName = farmName, dirty = true))
         Log.d(TAG, "Farm name updated for user $userId: $farmName")
     }
@@ -34,7 +35,7 @@ class UserRepository @Inject constructor(
         photoUrl = photoUrl,
         farmName = farmName,
         userType = userType,
-        idToken = idToken,
+        createdAt = createdAt,
         dirty = dirty
     )
 
@@ -45,7 +46,7 @@ class UserRepository @Inject constructor(
         photoUrl = photoUrl,
         farmName = farmName,
         userType = userType,
-        idToken = idToken,
+        createdAt = createdAt,
         dirty = dirty
     )
 
