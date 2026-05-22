@@ -3,20 +3,27 @@ package com.rostry.prototype
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import dagger.hilt.android.AndroidEntryPoint
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.navigation
+import androidx.navigation.compose.rememberNavController
 import coil.Coil
 import coil.ImageLoader
 import com.rostry.prototype.telegram.TelegramApi
 import com.rostry.prototype.telegram.TelegramImageFetcher
+import com.rostry.prototype.ui.auth.AuthNavWrapper
+import com.rostry.prototype.ui.navigation.Routes
+import com.rostry.prototype.ui.onboarding.AddBirdScreen
+import com.rostry.prototype.ui.onboarding.FarmSetupScreen
 import com.rostry.prototype.ui.theme.RostryPrototypeTheme
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -32,29 +39,60 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             RostryPrototypeTheme {
+                val navController = rememberNavController()
+
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Rostry",
-                        modifier = Modifier.padding(innerPadding)
-                    )
+                    NavHost(
+                        navController = navController,
+                        startDestination = Routes.AUTH,
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        composable(Routes.AUTH) {
+                            AuthNavWrapper(
+                                onNavigateToOnboarding = {
+                                    navController.navigate(Routes.ONBOARDING) {
+                                        popUpTo(Routes.AUTH) { inclusive = true }
+                                    }
+                                },
+                                onNavigateToDashboard = {
+                                    navController.navigate(Routes.DASHBOARD) {
+                                        popUpTo(Routes.AUTH) { inclusive = true }
+                                    }
+                                }
+                            )
+                        }
+
+                        navigation(
+                            startDestination = Routes.FARM_SETUP,
+                            route = Routes.ONBOARDING
+                        ) {
+                            composable(Routes.FARM_SETUP) {
+                                FarmSetupScreen(
+                                    onContinue = {
+                                        navController.navigate(Routes.ADD_BIRD) {
+                                            popUpTo(Routes.FARM_SETUP) { inclusive = true }
+                                        }
+                                    }
+                                )
+                            }
+
+                            composable(Routes.ADD_BIRD) {
+                                AddBirdScreen(
+                                    onNavigateToDashboard = {
+                                        navController.navigate(Routes.DASHBOARD) {
+                                            popUpTo(Routes.AUTH) { inclusive = true }
+                                        }
+                                    }
+                                )
+                            }
+                        }
+
+                        composable(Routes.DASHBOARD) {
+                            Text("Dashboard")
+                        }
+                    }
                 }
             }
         }
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    RostryPrototypeTheme {
-        Greeting("Rostry")
     }
 }

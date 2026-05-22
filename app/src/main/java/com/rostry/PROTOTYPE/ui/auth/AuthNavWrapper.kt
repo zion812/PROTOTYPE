@@ -11,12 +11,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.firebase.auth.FirebaseAuth
 
 @Composable
 fun AuthNavWrapper(
     onNavigateToOnboarding: () -> Unit,
-    onNavigateToDashboard: () -> Unit
+    onNavigateToDashboard: () -> Unit,
+    viewModel: AuthViewModel = hiltViewModel()
 ) {
     var authChecked by remember { mutableStateOf(false) }
     var loggedIn by remember { mutableStateOf(false) }
@@ -38,7 +40,14 @@ fun AuthNavWrapper(
 
     if (loggedIn) {
         LaunchedEffect(Unit) {
-            onNavigateToDashboard()
+            val firebaseUser = FirebaseAuth.getInstance().currentUser ?: return@LaunchedEffect
+            val userId = firebaseUser.uid.hashCode().toLong()
+            val needsOnboarding = viewModel.checkNeedsOnboarding(userId)
+            if (needsOnboarding) {
+                onNavigateToOnboarding()
+            } else {
+                onNavigateToDashboard()
+            }
         }
         return
     }

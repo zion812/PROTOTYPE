@@ -2,7 +2,7 @@ package com.rostry.prototype.data.repo
 
 import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.ktx.await
+import kotlinx.coroutines.tasks.await
 import com.google.gson.Gson
 import com.google.gson.JsonElement
 import com.rostry.prototype.BuildConfig

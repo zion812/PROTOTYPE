@@ -10,7 +10,7 @@ plugins {
 
 android {
     namespace = "com.rostry.prototype"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.rostry.prototype"
@@ -21,8 +21,8 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField("String", "TELEGRAM_BOT_TOKEN", "\"\"")
-        buildConfigField("String", "TELEGRAM_CHANNEL_ID", "\"\"")
+        buildConfigField("String", "TELEGRAM_BOT_TOKEN", "8610065900:AAE3IRY0UKRglyL4TwKIrZn0TPSFFszeVYk")
+        buildConfigField("String", "TELEGRAM_CHANNEL_ID", "-1003964491069")
     }
 
     buildTypes {
@@ -78,6 +78,12 @@ dependencies {
 
     // Google Play Services Auth
     implementation(libs.play.services.auth)
+
+    // Kotlinx Coroutines Play Services (Task.await())
+    implementation(libs.kotlinx.coroutines.play.services)
+
+    // Guava (required by CameraX ListenableFuture)
+    implementation("com.google.guava:guava:33.0.0-android")
 
     // OkHttp
     implementation(libs.okhttp)
