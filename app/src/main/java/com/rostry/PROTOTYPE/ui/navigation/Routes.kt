@@ -7,4 +7,5 @@ object Routes {
     const val ADD_BIRD = "add_bird"
     const val DASHBOARD = "dashboard"
     const val DAILY_LOG = "daily_log"
+    const val MARKETPLACE = "marketplace"
 }
