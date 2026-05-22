@@ -7,6 +7,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import com.rostry.prototype.ui.auth.AuthNavWrapper
+import com.rostry.prototype.ui.debug.DebugScreen
 import com.rostry.prototype.ui.farm.DailyLogScreen
 import com.rostry.prototype.ui.farm.FarmDashboardScreen
 import com.rostry.prototype.ui.market.MarketplaceScreen
@@ -68,6 +69,17 @@ fun RostryNavHost(
             FarmDashboardScreen(
                 onAddDailyLog = {
                     navController.navigate(Routes.DAILY_LOG)
+                },
+                onOpenDebug = {
+                    navController.navigate(Routes.DEBUG)
+                }
+            )
+        }
+
+        composable(Routes.DEBUG) {
+            DebugScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
                 }
             )
         }

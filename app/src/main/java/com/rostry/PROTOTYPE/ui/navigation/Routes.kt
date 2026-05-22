@@ -8,4 +8,5 @@ object Routes {
     const val DASHBOARD = "dashboard"
     const val DAILY_LOG = "daily_log"
     const val MARKETPLACE = "marketplace"
+    const val DEBUG = "debug"
 }

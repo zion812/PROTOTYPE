@@ -1,5 +1,6 @@
 package com.rostry.prototype.data.repo
 
+import android.util.Log
 import com.google.gson.Gson
 import com.rostry.prototype.data.local.dao.DailyLogDao
 import com.rostry.prototype.data.local.dao.FarmAssetDao
@@ -30,6 +31,7 @@ class FarmRepository @Inject constructor(
     suspend fun createAsset(asset: FarmAsset): Result<String> = runCatching {
         val entity = asset.toEntity().copy(dirty = true)
         farmAssetDao.upsert(entity)
+        Log.d(TAG, "FarmAsset saved locally: ${entity.assetId}")
 
         val outbox = OutboxEntity(
             entityType = ENTITY_TYPE_FARM_ASSET,
@@ -39,7 +41,9 @@ class FarmRepository @Inject constructor(
             createdAt = System.currentTimeMillis()
         )
         outboxDao.insert(outbox)
+        Log.d(TAG, "Outbox entry created for FarmAsset: ${entity.assetId}")
 
+        // TODO TEST_OFFLINE_1: Airplane mode, add bird, kill app, reopen, verify persistence
         entity.assetId.toString()
     }
 
@@ -49,6 +53,7 @@ class FarmRepository @Inject constructor(
     suspend fun createDailyLog(log: DailyLog): Result<String> = runCatching {
         val entity = log.toEntity().copy(dirty = true)
         dailyLogDao.upsert(entity)
+        Log.d(TAG, "DailyLog saved locally: ${entity.logId}")
 
         val outbox = OutboxEntity(
             entityType = ENTITY_TYPE_DAILY_LOG,
@@ -58,7 +63,9 @@ class FarmRepository @Inject constructor(
             createdAt = System.currentTimeMillis()
         )
         outboxDao.insert(outbox)
+        Log.d(TAG, "Outbox entry created for DailyLog: ${entity.logId}")
 
+        // TODO TEST_OFFLINE_2: Add daily log offline, reconnect, tap sync, verify Firestore + Telegram
         entity.logId.toString()
     }
 
@@ -81,6 +88,7 @@ class FarmRepository @Inject constructor(
     )
 
     private fun FarmAssetEntity.toDomain() = FarmAsset(
+        // TODO TEST_IMAGE_1: Verify tg:// URI displays image after upload
         assetId = assetId,
         farmerId = farmerId,
         name = name,
@@ -113,4 +121,8 @@ class FarmRepository @Inject constructor(
         notes = notes,
         dirty = dirty
     )
+
+    companion object {
+        private const val TAG = "FarmRepository"
+    }
 }

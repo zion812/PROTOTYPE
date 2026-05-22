@@ -17,6 +17,9 @@ interface OutboxDao {
     @Query("UPDATE outbox SET status = 'COMPLETED' WHERE outboxId = :outboxId")
     suspend fun markCompleted(outboxId: Long)
 
+    @Query("SELECT * FROM outbox ORDER BY createdAt DESC")
+    suspend fun getAll(): List<OutboxEntity>
+
     @Insert
     suspend fun insert(outbox: OutboxEntity)
 }

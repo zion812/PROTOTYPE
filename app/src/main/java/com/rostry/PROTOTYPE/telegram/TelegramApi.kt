@@ -74,6 +74,19 @@ class TelegramApi {
         "$BASE_URL/file/bot$TOKEN/$filePath"
     }
 
+    fun getMe(): Result<String> = runCatching {
+        val request = Request.Builder()
+            .url("$BASE_URL/bot$TOKEN/getMe")
+            .build()
+        val response = client.newCall(request).execute()
+        val body = response.body?.string() ?: throw IOException("Empty response body")
+        val json = gson.fromJson(body, JsonObject::class.java)
+        check(json.get("ok")?.asBoolean == true) {
+            "Telegram API error: ${json.get("description")?.asString}"
+        }
+        json.getAsJsonObject("result").toString()
+    }
+
     companion object {
         private const val BASE_URL = "https://api.telegram.org"
         private val TOKEN: String get() = BuildConfig.TELEGRAM_BOT_TOKEN

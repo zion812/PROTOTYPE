@@ -72,6 +72,7 @@ class AuthViewModel @Inject constructor(
     }
 
     fun signOut() {
+        // TODO TEST_AUTH_1: Sign out, sign in with different Google account, verify data isolation
         googleAuthHelper.signOut()
         _authState.value = AuthUiState.Idle
     }

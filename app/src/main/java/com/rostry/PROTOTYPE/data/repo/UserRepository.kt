@@ -1,5 +1,6 @@
 package com.rostry.prototype.data.repo
 
+import android.util.Log
 import com.rostry.prototype.data.local.dao.UserDao
 import com.rostry.prototype.data.local.entity.UserEntity
 import com.rostry.prototype.domain.model.User
@@ -14,6 +15,7 @@ class UserRepository @Inject constructor(
 ) {
     suspend fun saveUser(user: User): Result<Unit> = runCatching {
         userDao.upsert(user.toEntity().copy(dirty = true))
+        Log.d(TAG, "User saved: ${user.userId}")
     }
 
     fun getUser(userId: Long): Flow<User?> =
@@ -22,6 +24,7 @@ class UserRepository @Inject constructor(
     suspend fun updateFarmName(userId: Long, farmName: String): Result<Unit> = runCatching {
         val entity = userDao.getById(userId) ?: throw Exception("User not found")
         userDao.upsert(entity.copy(farmName = farmName, dirty = true))
+        Log.d(TAG, "Farm name updated for user $userId: $farmName")
     }
 
     private fun User.toEntity() = UserEntity(
@@ -43,4 +46,8 @@ class UserRepository @Inject constructor(
         userType = userType,
         dirty = dirty
     )
+
+    companion object {
+        private const val TAG = "UserRepository"
+    }
 }

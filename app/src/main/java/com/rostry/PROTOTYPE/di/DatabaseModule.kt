@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.gson.Gson
+import com.rostry.prototype.data.connectivity.ConnectivityObserver
 import com.rostry.prototype.data.local.AppDatabase
 import com.rostry.prototype.data.local.dao.DailyLogDao
 import com.rostry.prototype.data.local.dao.FarmAssetDao
@@ -88,4 +89,11 @@ object DatabaseModule {
     ): SyncRepository = SyncRepository(
         outboxDao, farmAssetDao, dailyLogDao, telegramApi, firestore, gson
     )
+
+    @Provides
+    @Singleton
+    fun provideConnectivityObserver(
+        @ApplicationContext context: Context,
+        syncRepository: SyncRepository
+    ): ConnectivityObserver = ConnectivityObserver(context, syncRepository)
 }

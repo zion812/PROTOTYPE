@@ -30,13 +30,16 @@ class SyncRepository @Inject constructor(
 ) {
     suspend fun syncAll(): Result<Unit> = runCatching {
         val pendingItems = outboxDao.getPending()
+        Log.d(TAG, "syncAll started, ${pendingItems.size} pending items")
         for (item in pendingItems) {
             try {
                 processOutboxItem(item)
+                Log.d(TAG, "Outbox item ${item.outboxId} synced successfully")
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to sync outbox item ${item.outboxId}", e)
             }
         }
+        Log.d(TAG, "syncAll completed")
     }
 
     private suspend fun processOutboxItem(item: OutboxEntity) {
@@ -48,13 +51,16 @@ class SyncRepository @Inject constructor(
 
     private suspend fun syncFarmAsset(item: OutboxEntity) {
         val asset = gson.fromJson(item.payloadJson, FarmAsset::class.java)
+        Log.d(TAG, "Syncing FarmAsset ${asset.assetId}: ${asset.name}")
 
         var imageUrl = asset.imageUrl
         if (imageUrl.startsWith("file://")) {
             val file = File(imageUrl.removePrefix("file://"))
+            Log.d(TAG, "Uploading image for FarmAsset ${asset.assetId}")
             val tgRef = telegramApi.uploadPhoto(BuildConfig.TELEGRAM_CHANNEL_ID, file)
                 .getOrThrow()
             imageUrl = telegramApi.resolveUrl(tgRef).getOrThrow()
+            Log.d(TAG, "Image resolved to: $imageUrl")
         }
 
         val updatedAsset = asset.copy(imageUrl = imageUrl, dirty = false)
@@ -64,23 +70,28 @@ class SyncRepository @Inject constructor(
             .document(updatedAsset.assetId.toString())
             .set(data)
             .await()
+        Log.d(TAG, "FarmAsset ${asset.assetId} pushed to Firestore")
 
         val localEntity = farmAssetDao.getById(asset.assetId)
         if (localEntity != null) {
             farmAssetDao.update(localEntity.copy(imageUrl = imageUrl, dirty = false))
+            Log.d(TAG, "Local FarmAsset ${asset.assetId} updated with resolved URL")
         }
         outboxDao.markCompleted(item.outboxId)
     }
 
     private suspend fun syncDailyLog(item: OutboxEntity) {
         val log = gson.fromJson(item.payloadJson, DailyLog::class.java)
+        Log.d(TAG, "Syncing DailyLog ${log.logId}")
 
         var photoUrl = log.photoUrl
         if (photoUrl.startsWith("file://")) {
             val file = File(photoUrl.removePrefix("file://"))
+            Log.d(TAG, "Uploading photo for DailyLog ${log.logId}")
             val tgRef = telegramApi.uploadPhoto(BuildConfig.TELEGRAM_CHANNEL_ID, file)
                 .getOrThrow()
             photoUrl = telegramApi.resolveUrl(tgRef).getOrThrow()
+            Log.d(TAG, "Photo resolved to: $photoUrl")
         }
 
         val updatedLog = log.copy(photoUrl = photoUrl, dirty = false)
@@ -90,10 +101,12 @@ class SyncRepository @Inject constructor(
             .document(updatedLog.logId.toString())
             .set(data)
             .await()
+        Log.d(TAG, "DailyLog ${log.logId} pushed to Firestore")
 
         val localEntity = dailyLogDao.getById(log.logId)
         if (localEntity != null) {
             dailyLogDao.upsert(localEntity.copy(photoUrl = photoUrl, dirty = false))
+            Log.d(TAG, "Local DailyLog ${log.logId} updated with resolved URL")
         }
         outboxDao.markCompleted(item.outboxId)
     }
