@@ -31,14 +31,17 @@ class SyncRepository @Inject constructor(
     private val gson: Gson
 ) {
     suspend fun syncAll(): Result<Unit> = runCatching {
-        val pendingItems = outboxDao.getPending()
-        Log.d(TAG, "syncAll started, ${pendingItems.size} pending items")
-        for (item in pendingItems) {
+        val items = outboxDao.getPendingOrFailed()
+        Log.d(TAG, "syncAll started, ${items.size} pending/failed items")
+        for (item in items) {
+            outboxDao.markPending(item.outboxId)
             try {
                 processOutboxItem(item)
+                outboxDao.markCompleted(item.outboxId)
                 Log.d(TAG, "Outbox item ${item.outboxId} synced successfully")
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to sync outbox item ${item.outboxId}", e)
+                outboxDao.markFailed(item.outboxId)
             }
         }
         Log.d(TAG, "syncAll completed")
@@ -58,16 +61,21 @@ class SyncRepository @Inject constructor(
         var imageUrl = asset.imageUrl ?: ""
         if (imageUrl.startsWith("file://")) {
             val file = File(imageUrl.removePrefix("file://"))
-            Log.d(TAG, "Uploading image for FarmAsset ${asset.assetId}")
-            val tgRef = telegramApi.uploadPhoto(BuildConfig.TELEGRAM_CHANNEL_ID, file)
-                .getOrThrow()
-            val fileId = tgRef.removePrefix("tg://").substringBefore("@")
-            imageUrl = telegramApi.resolveUrl(fileId).getOrThrow()
-            Log.d(TAG, "Image resolved to: $imageUrl")
+            try {
+                Log.d(TAG, "Uploading image for FarmAsset ${asset.assetId}")
+                val tgRef = telegramApi.uploadPhoto(BuildConfig.TELEGRAM_CHANNEL_ID, file)
+                    .getOrThrow()
+                val fileId = tgRef.removePrefix("tg://").substringBefore("@")
+                imageUrl = telegramApi.resolveUrl(fileId).getOrThrow()
+                Log.d(TAG, "Image resolved to: $imageUrl")
+            } catch (e: Exception) {
+                Log.w(TAG, "Telegram upload failed for ${asset.assetId}, pushing without image", e)
+                imageUrl = ""
+            }
         }
 
         val data = gson.toFirestoreMap(
-            asset.copy(imageUrl = imageUrl, dirty = false)
+            asset.copy(imageUrl = imageUrl.ifEmpty { null }, dirty = false)
         )
         firestore.collection("farm_assets")
             .document(asset.assetId)
@@ -96,16 +104,21 @@ class SyncRepository @Inject constructor(
         var photoUrl = log.photoUrl ?: ""
         if (photoUrl.startsWith("file://")) {
             val file = File(photoUrl.removePrefix("file://"))
-            Log.d(TAG, "Uploading photo for DailyLog ${log.logId}")
-            val tgRef = telegramApi.uploadPhoto(BuildConfig.TELEGRAM_CHANNEL_ID, file)
-                .getOrThrow()
-            val photoFileId = tgRef.removePrefix("tg://").substringBefore("@")
-            photoUrl = telegramApi.resolveUrl(photoFileId).getOrThrow()
-            Log.d(TAG, "Photo resolved to: $photoUrl")
+            try {
+                Log.d(TAG, "Uploading photo for DailyLog ${log.logId}")
+                val tgRef = telegramApi.uploadPhoto(BuildConfig.TELEGRAM_CHANNEL_ID, file)
+                    .getOrThrow()
+                val photoFileId = tgRef.removePrefix("tg://").substringBefore("@")
+                photoUrl = telegramApi.resolveUrl(photoFileId).getOrThrow()
+                Log.d(TAG, "Photo resolved to: $photoUrl")
+            } catch (e: Exception) {
+                Log.w(TAG, "Telegram upload failed for log ${log.logId}, pushing without photo", e)
+                photoUrl = ""
+            }
         }
 
         val data = gson.toFirestoreMap(
-            log.copy(photoUrl = photoUrl, dirty = false)
+            log.copy(photoUrl = photoUrl.ifEmpty { null }, dirty = false)
         )
         firestore.collection("daily_logs")
             .document(log.logId)

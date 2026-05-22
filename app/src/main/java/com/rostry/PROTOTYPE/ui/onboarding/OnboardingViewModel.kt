@@ -1,6 +1,8 @@
 package com.rostry.prototype.ui.onboarding
 
 import android.app.Application
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -162,14 +164,36 @@ class OnboardingViewModel @Inject constructor(
         return try {
             val inputStream = application.contentResolver.openInputStream(uri)
                 ?: return null
+            val bitmap = BitmapFactory.decodeStream(inputStream)
+            inputStream.close()
+            if (bitmap == null) return null
+
+            val maxDimension = 1920
+            val scale = minOf(
+                maxDimension.toFloat() / bitmap.width,
+                maxDimension.toFloat() / bitmap.height
+            )
+            val (width, height) = if (scale < 1f) {
+                (bitmap.width * scale).toInt() to (bitmap.height * scale).toInt()
+            } else {
+                bitmap.width to bitmap.height
+            }
+
             val dir = File(application.filesDir, "bird_photos")
             dir.mkdirs()
             val file = File(dir, "bird_${System.currentTimeMillis()}.jpg")
-            inputStream.use { input ->
-                file.outputStream().use { output ->
-                    input.copyTo(output)
-                }
+
+            val scaled = if (scale < 1f) {
+                Bitmap.createScaledBitmap(bitmap, width, height, true)
+            } else {
+                bitmap
             }
+            file.outputStream().use { out ->
+                scaled.compress(Bitmap.CompressFormat.JPEG, 80, out)
+            }
+            if (scaled !== bitmap) scaled.recycle()
+            bitmap.recycle()
+
             "file://${file.absolutePath}"
         } catch (e: Exception) {
             null
