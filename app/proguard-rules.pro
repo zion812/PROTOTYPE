@@ -1,3 +1,7 @@
+# Prototype: Keep all classes and members for debugging and reflection-heavy libraries.
+# isMinifyEnabled = false in release build, so these rules are documentation only.
+# When enabling minification, uncomment the rules below as needed.
+#
 # Add project specific ProGuard rules here.
 # You can control the set of applied configuration files using the
 # proguardFiles setting in build.gradle.

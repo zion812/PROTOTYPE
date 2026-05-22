@@ -10,6 +10,7 @@ playServicesAuth = "21.2.0"
 okhttp = "4.12.0"
 gson = "2.11.0"
 datastore = "1.1.1"
+timber = "5.0.1"
 camerax = "1.3.1"
 hilt = "2.51.1"
 androidxHilt = "1.2.0"
@@ -73,6 +74,9 @@ hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref
 hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.ref = "hilt" }
 hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-compose", version.ref = "androidxHilt" }
 hilt-work = { group = "androidx.hilt", name = "hilt-work", version.ref = "androidxHilt" }
+
+# Timber
+timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }
 
 # AndroidX
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
