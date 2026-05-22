@@ -21,8 +21,8 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField("String", "TELEGRAM_BOT_TOKEN", "8610065900:AAE3IRY0UKRglyL4TwKIrZn0TPSFFszeVYk")
-        buildConfigField("String", "TELEGRAM_CHANNEL_ID", "-1003964491069")
+        buildConfigField("String", "TELEGRAM_BOT_TOKEN", "\"8610065900:AAE3IRY0UKRglyL4TwKIrZn0TPSFFszeVYk\"")
+        buildConfigField("String", "TELEGRAM_CHANNEL_ID", "\"-1003964491069\"")
     }
 
     buildTypes {
