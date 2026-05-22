@@ -6,5 +6,6 @@ data class User(
     val email: String,
     val photoUrl: String,
     val farmName: String,
-    val userType: String = "FARMER"
+    val userType: String = "FARMER",
+    val dirty: Boolean = false
 )

@@ -9,7 +9,7 @@ import androidx.room.PrimaryKey
     indices = [Index(value = ["status"])]
 )
 data class OutboxEntity(
-    @PrimaryKey val outboxId: Long,
+    @PrimaryKey(autoGenerate = true) val outboxId: Long = 0,
     val entityType: String,
     val entityId: Long,
     val payloadJson: String,
