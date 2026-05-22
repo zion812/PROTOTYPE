@@ -10,7 +10,7 @@ import com.rostry.prototype.ui.auth.AuthNavWrapper
 import com.rostry.prototype.ui.debug.DebugScreen
 import com.rostry.prototype.ui.farm.DailyLogScreen
 import com.rostry.prototype.ui.farm.FarmDashboardScreen
-import com.rostry.prototype.ui.market.MarketplaceScreen
+import com.rostry.prototype.ui.market.MarketplaceBrowseScreen
 import com.rostry.prototype.ui.onboarding.AddBirdScreen
 import com.rostry.prototype.ui.onboarding.FarmSetupScreen
 
@@ -47,28 +47,29 @@ fun RostryNavHost(
             composable(Routes.FARM_SETUP) {
                 FarmSetupScreen(
                     onContinue = {
-                        navController.navigate(Routes.ADD_BIRD) {
-                            popUpTo(Routes.FARM_SETUP) { inclusive = true }
-                        }
+                        navController.navigate(Routes.ADD_BIRD)
                     }
                 )
             }
+        }
 
-            composable(Routes.ADD_BIRD) {
-                AddBirdScreen(
-                    onNavigateToDashboard = {
-                        navController.navigate(Routes.DASHBOARD) {
-                            popUpTo(Routes.AUTH) { inclusive = true }
-                        }
+        composable(Routes.ADD_BIRD) {
+            AddBirdScreen(
+                onNavigateToDashboard = {
+                    navController.navigate(Routes.DASHBOARD) {
+                        popUpTo(Routes.ONBOARDING) { inclusive = true }
                     }
-                )
-            }
+                }
+            )
         }
 
         composable(Routes.DASHBOARD) {
             FarmDashboardScreen(
                 onAddDailyLog = {
                     navController.navigate(Routes.DAILY_LOG)
+                },
+                onAddBird = {
+                    navController.navigate(Routes.ADD_BIRD)
                 },
                 onOpenDebug = {
                     navController.navigate(Routes.DEBUG)
@@ -93,7 +94,7 @@ fun RostryNavHost(
         }
 
         composable(Routes.MARKETPLACE) {
-            MarketplaceScreen()
+            MarketplaceBrowseScreen()
         }
     }
 }

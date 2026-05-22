@@ -16,7 +16,7 @@ import com.rostry.prototype.data.local.entity.UserEntity
 
 @Database(
     entities = [UserEntity::class, FarmAssetEntity::class, DailyLogEntity::class, OutboxEntity::class],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -27,11 +27,10 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun outboxDao(): OutboxDao
 
     companion object {
-        // Stub migration: version 1 -> 2
-        // val MIGRATION_1_2 = object : Migration(1, 2) {
-        //     override fun migrate(db: SupportSQLiteDatabase) {
-        //         db.execSQL("ALTER TABLE users ADD COLUMN new_field TEXT NOT NULL DEFAULT ''")
-        //     }
-        // }
+        val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE farm_assets ADD COLUMN birdType TEXT NOT NULL DEFAULT ''")
+            }
+        }
     }
 }

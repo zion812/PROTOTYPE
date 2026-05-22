@@ -18,8 +18,10 @@ import javax.inject.Inject
 
 data class OnboardingUiState(
     val farmName: String = "",
+    val location: String = "",
     val birdName: String = "",
     val breed: String = "",
+    val birdType: String = "",
     val photoUri: Uri? = null,
     val isSaving: Boolean = false,
     val farmNameError: String? = null,
@@ -48,12 +50,20 @@ class OnboardingViewModel @Inject constructor(
         _state.value = _state.value.copy(farmName = name, farmNameError = null)
     }
 
+    fun updateLocation(location: String) {
+        _state.value = _state.value.copy(location = location)
+    }
+
     fun updateBirdName(name: String) {
         _state.value = _state.value.copy(birdName = name, birdNameError = null)
     }
 
     fun updateBreed(breed: String) {
         _state.value = _state.value.copy(breed = breed)
+    }
+
+    fun updateBirdType(birdType: String) {
+        _state.value = _state.value.copy(birdType = birdType)
     }
 
     fun updatePhotoUri(uri: Uri?) {
@@ -86,6 +96,7 @@ class OnboardingViewModel @Inject constructor(
 
                         val userMap = hashMapOf(
                             "farmName" to name,
+                            "location" to _state.value.location.trim(),
                             "userId" to firebaseUid,
                             "displayName" to (firebaseUser.displayName ?: ""),
                             "email" to (firebaseUser.email ?: "")
@@ -120,6 +131,7 @@ class OnboardingViewModel @Inject constructor(
                 farmerId = userId,
                 name = name,
                 breed = _state.value.breed.trim(),
+                birdType = _state.value.birdType,
                 imageUrl = _state.value.photoUri?.toString(),
                 createdAt = System.currentTimeMillis()
             )
@@ -130,6 +142,7 @@ class OnboardingViewModel @Inject constructor(
                 birdSaved = true,
                 birdName = "",
                 breed = "",
+                birdType = "",
                 photoUri = null
             )
             onSuccess()

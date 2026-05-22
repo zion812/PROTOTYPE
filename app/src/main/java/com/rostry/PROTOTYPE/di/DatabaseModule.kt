@@ -37,7 +37,7 @@ object DatabaseModule {
         context,
         AppDatabase::class.java,
         "rostry_db"
-    ).build()
+    ).addMigrations(AppDatabase.MIGRATION_1_2).build()
 
     @Provides
     fun provideUserDao(db: AppDatabase): UserDao = db.userDao()

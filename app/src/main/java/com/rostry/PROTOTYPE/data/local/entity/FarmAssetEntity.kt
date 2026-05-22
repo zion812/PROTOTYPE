@@ -14,6 +14,7 @@ data class FarmAssetEntity(
     val farmerId: String,
     val name: String,
     val breed: String,
+    val birdType: String = "",
     val imageUrl: String? = null,
     val createdAt: Long,
     val dirty: Boolean = true
