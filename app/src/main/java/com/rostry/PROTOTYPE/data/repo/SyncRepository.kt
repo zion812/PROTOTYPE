@@ -61,7 +61,8 @@ class SyncRepository @Inject constructor(
             Log.d(TAG, "Uploading image for FarmAsset ${asset.assetId}")
             val tgRef = telegramApi.uploadPhoto(BuildConfig.TELEGRAM_CHANNEL_ID, file)
                 .getOrThrow()
-            imageUrl = telegramApi.resolveUrl(tgRef).getOrThrow()
+            val fileId = tgRef.removePrefix("tg://").substringBefore("@")
+            imageUrl = telegramApi.resolveUrl(fileId).getOrThrow()
             Log.d(TAG, "Image resolved to: $imageUrl")
         }
 
@@ -98,7 +99,8 @@ class SyncRepository @Inject constructor(
             Log.d(TAG, "Uploading photo for DailyLog ${log.logId}")
             val tgRef = telegramApi.uploadPhoto(BuildConfig.TELEGRAM_CHANNEL_ID, file)
                 .getOrThrow()
-            photoUrl = telegramApi.resolveUrl(tgRef).getOrThrow()
+            val photoFileId = tgRef.removePrefix("tg://").substringBefore("@")
+            photoUrl = telegramApi.resolveUrl(photoFileId).getOrThrow()
             Log.d(TAG, "Photo resolved to: $photoUrl")
         }
 

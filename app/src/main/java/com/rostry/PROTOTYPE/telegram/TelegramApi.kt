@@ -1,90 +1,87 @@
 package com.rostry.prototype.telegram
 
-import com.google.gson.Gson
-import com.google.gson.JsonObject
 import com.rostry.prototype.BuildConfig
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.asRequestBody
+import org.json.JSONObject
 import java.io.File
 import java.io.IOException
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.ConcurrentHashMap
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class TelegramApi {
+@Singleton
+class TelegramApi @Inject constructor(
+    val client: OkHttpClient
+) {
+    private val urlCache = ConcurrentHashMap<String, String>()
 
-    private val client = OkHttpClient.Builder()
-        .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(30, TimeUnit.SECONDS)
-        .writeTimeout(60, TimeUnit.SECONDS)
-        .build()
+    suspend fun uploadPhoto(channelId: String, file: File): Result<String> = withContext(Dispatchers.IO) {
+        runCatching {
+            val mediaType = "image/jpeg".toMediaType()
+            val requestBody = MultipartBody.Builder()
+                .setType(MultipartBody.FORM)
+                .addFormDataPart("chat_id", channelId)
+                .addFormDataPart("photo", file.name, file.asRequestBody(mediaType))
+                .build()
 
-    private val gson = Gson()
+            val request = Request.Builder()
+                .url("$BASE_URL/bot$TOKEN/sendPhoto")
+                .post(requestBody)
+                .build()
 
-    fun uploadPhoto(channelId: String, file: File): Result<String> = runCatching {
-        val mediaType = "image/jpeg".toMediaType()
-        val requestBody = MultipartBody.Builder()
-            .setType(MultipartBody.FORM)
-            .addFormDataPart("chat_id", channelId)
-            .addFormDataPart("photo", file.name, file.asRequestBody(mediaType))
-            .build()
+            val json = executeAndParse(request)
+            val result = json.optJSONObject("result") ?: throw IOException("Missing result in response")
+            val photoArray = result.optJSONArray("photo") ?: throw IOException("Missing photo array in response")
+            val largest = photoArray.optJSONObject(photoArray.length() - 1) ?: throw IOException("Empty photo array")
+            val fileId = largest.optString("file_id", "") ?: throw IOException("Missing file_id in photo")
+            check(fileId.isNotBlank()) { "Blank file_id in photo" }
 
-        val request = Request.Builder()
-            .url("$BASE_URL/bot$TOKEN/sendPhoto")
-            .post(requestBody)
-            .build()
-
-        val response = client.newCall(request).execute()
-        val body = response.body?.string() ?: throw IOException("Empty response body")
-        val json = gson.fromJson(body, JsonObject::class.java)
-
-        check(json.get("ok")?.asBoolean == true) {
-            "Telegram API error: ${json.get("description")?.asString}"
+            "tg://$fileId@$channelId"
         }
-
-        val result = json.getAsJsonObject("result")
-        val photoArray = result.getAsJsonArray("photo")
-        val largest = photoArray[photoArray.size() - 1].asJsonObject
-        val fileId = largest.get("file_id")?.asString
-            ?: throw IOException("Missing file_id in response")
-
-        "tg://$fileId@$channelId"
     }
 
-    fun resolveUrl(tgRef: String): Result<String> = runCatching {
-        val fileId = tgRef.removePrefix("tg://").substringBefore("@")
-        require(fileId.isNotBlank()) { "Invalid tgRef: $tgRef" }
-
-        val request = Request.Builder()
-            .url("$BASE_URL/bot$TOKEN/getFile?file_id=$fileId")
-            .build()
-
-        val response = client.newCall(request).execute()
-        val body = response.body?.string() ?: throw IOException("Empty response body")
-        val json = gson.fromJson(body, JsonObject::class.java)
-
-        check(json.get("ok")?.asBoolean == true) {
-            "Telegram API error: ${json.get("description")?.asString}"
+    suspend fun getMe(): Result<String> = withContext(Dispatchers.IO) {
+        runCatching {
+            val request = Request.Builder()
+                .url("$BASE_URL/bot$TOKEN/getMe")
+                .build()
+            executeAndParse(request).toString()
         }
-
-        val filePath = json.getAsJsonObject("result").get("file_path")?.asString
-            ?: throw IOException("Missing file_path in response")
-
-        "$BASE_URL/file/bot$TOKEN/$filePath"
     }
 
-    fun getMe(): Result<String> = runCatching {
-        val request = Request.Builder()
-            .url("$BASE_URL/bot$TOKEN/getMe")
-            .build()
+    suspend fun resolveUrl(fileId: String): Result<String> = withContext(Dispatchers.IO) {
+        runCatching {
+            urlCache[fileId]?.let { return@runCatching it }
+
+            val request = Request.Builder()
+                .url("$BASE_URL/bot$TOKEN/getFile?file_id=$fileId")
+                .build()
+
+            val json = executeAndParse(request)
+            val result = json.optJSONObject("result") ?: throw IOException("Missing result in response")
+            val filePath = result.optString("file_path", "") ?: throw IOException("Missing file_path in result")
+            check(filePath.isNotBlank()) { "Blank file_path in result" }
+
+            val url = "$BASE_URL/file/bot$TOKEN/$filePath"
+            urlCache[fileId] = url
+            url
+        }
+    }
+
+    private fun executeAndParse(request: Request): JSONObject {
         val response = client.newCall(request).execute()
         val body = response.body?.string() ?: throw IOException("Empty response body")
-        val json = gson.fromJson(body, JsonObject::class.java)
-        check(json.get("ok")?.asBoolean == true) {
-            "Telegram API error: ${json.get("description")?.asString}"
+        val json = JSONObject(body)
+        if (!json.optBoolean("ok", false)) {
+            throw IOException("Telegram API error: ${json.optString("description", "unknown")}")
         }
-        json.getAsJsonObject("result").toString()
+        return json
     }
 
     companion object {

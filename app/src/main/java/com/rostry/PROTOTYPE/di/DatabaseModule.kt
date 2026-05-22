@@ -61,10 +61,6 @@ object DatabaseModule {
 
     @Provides
     @Singleton
-    fun provideTelegramApi(): TelegramApi = TelegramApi()
-
-    @Provides
-    @Singleton
     fun provideUserRepository(userDao: UserDao): UserRepository =
         UserRepository(userDao)
 
