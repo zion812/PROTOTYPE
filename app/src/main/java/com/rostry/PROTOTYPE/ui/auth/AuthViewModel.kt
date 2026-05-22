@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 sealed interface AuthUiState {
@@ -38,6 +39,7 @@ class AuthViewModel @Inject constructor(
     fun getSignInIntent(): Intent = googleAuthHelper.getSignInIntent()
 
     fun handleSignInResult(data: Intent?) {
+        Timber.d("handleSignInResult: started")
         _authState.value = AuthUiState.Loading
         try {
             val task = GoogleSignIn.getSignedInAccountFromIntent(data)
@@ -45,10 +47,12 @@ class AuthViewModel @Inject constructor(
             val idToken = account?.idToken
 
             if (idToken != null) {
+                Timber.d("handleSignInResult: got ID token, starting firebase auth")
                 viewModelScope.launch {
                     val result = googleAuthHelper.firebaseAuthWithGoogle(idToken)
                     _authState.value = result.fold(
                         onSuccess = { firebaseUser ->
+                            Timber.d("handleSignInResult: firebase auth success: ${firebaseUser.uid}")
                             val userId = firebaseUser.uid
                             val existingUser = userRepository.getUser(userId).first()
 
@@ -66,16 +70,20 @@ class AuthViewModel @Inject constructor(
                             AuthUiState.Success(user)
                         },
                         onFailure = { e ->
+                            Timber.e(e, "handleSignInResult: firebase auth failed")
                             AuthUiState.Error(e.message ?: "Firebase authentication failed")
                         }
                     )
                 }
             } else {
+                Timber.e("handleSignInResult: Google ID Token is null")
                 _authState.value = AuthUiState.Error("Google ID Token is null")
             }
         } catch (e: ApiException) {
+            Timber.e("handleSignInResult: Google Sign-In failed with status code: ${e.statusCode}")
             _authState.value = AuthUiState.Error("Google Sign-In failed: ${e.statusCode}")
         } catch (e: Exception) {
+            Timber.e(e, "handleSignInResult: unexpected error")
             _authState.value = AuthUiState.Error(e.message ?: "An unexpected error occurred")
         }
     }
