@@ -18,6 +18,8 @@ import coil.ImageLoader
 import com.rostry.prototype.telegram.TelegramApi
 import com.rostry.prototype.telegram.TelegramImageFetcher
 import com.rostry.prototype.ui.auth.AuthNavWrapper
+import com.rostry.prototype.ui.farm.DailyLogScreen
+import com.rostry.prototype.ui.farm.FarmDashboardScreen
 import com.rostry.prototype.ui.navigation.Routes
 import com.rostry.prototype.ui.onboarding.AddBirdScreen
 import com.rostry.prototype.ui.onboarding.FarmSetupScreen
@@ -88,7 +90,19 @@ class MainActivity : ComponentActivity() {
                         }
 
                         composable(Routes.DASHBOARD) {
-                            Text("Dashboard")
+                            FarmDashboardScreen(
+                                onAddDailyLog = {
+                                    navController.navigate(Routes.DAILY_LOG)
+                                }
+                            )
+                        }
+
+                        composable(Routes.DAILY_LOG) {
+                            DailyLogScreen(
+                                onNavigateBack = {
+                                    navController.popBackStack()
+                                }
+                            )
                         }
                     }
                 }
