@@ -4,6 +4,7 @@ import android.content.Intent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.common.api.ApiException
 import com.google.firebase.auth.FirebaseUser
 import com.rostry.prototype.data.repo.UserRepository
 import com.rostry.prototype.domain.model.User
@@ -37,33 +38,45 @@ class AuthViewModel @Inject constructor(
     fun getSignInIntent(): Intent = googleAuthHelper.getSignInIntent()
 
     fun signInWithGoogle(data: Intent?) {
+        _authState.value = AuthUiState.Loading
         try {
-            val account = GoogleSignIn.getSignedInAccountFromIntent(data)
-            if (account.isSuccessful) {
-                val idToken = account.result?.idToken
-                if (idToken != null) {
-                    _authState.value = AuthUiState.Loading
-                    viewModelScope.launch {
-                        val result = googleAuthHelper.firebaseAuthWithGoogle(idToken)
-                        _authState.value = result.fold(
-                            onSuccess = { firebaseUser ->
-                                val user = firebaseUser.toDomainUser()
-                                userRepository.saveUser(user)
-                                AuthUiState.Success(user)
-                            },
-                            onFailure = { e ->
-                                AuthUiState.Error(e.message ?: "Authentication failed")
+            val task = GoogleSignIn.getSignedInAccountFromIntent(data)
+            val account = task.getResult(ApiException::class.java)
+            val idToken = account?.idToken
+
+            if (idToken != null) {
+                viewModelScope.launch {
+                    val result = googleAuthHelper.firebaseAuthWithGoogle(idToken)
+                    _authState.value = result.fold(
+                        onSuccess = { firebaseUser ->
+                            val userId = firebaseUser.uid.hashCode().toLong()
+                            val existingUser = userRepository.getUser(userId).first()
+
+                            val user = if (existingUser != null) {
+                                existingUser.copy(
+                                    displayName = firebaseUser.displayName ?: existingUser.displayName,
+                                    photoUrl = firebaseUser.photoUrl?.toString() ?: existingUser.photoUrl,
+                                    email = firebaseUser.email ?: existingUser.email
+                                )
+                            } else {
+                                firebaseUser.toDomainUser()
                             }
-                        )
-                    }
-                } else {
-                    _authState.value = AuthUiState.Error("Google sign-in failed")
+
+                            userRepository.saveUser(user)
+                            AuthUiState.Success(user)
+                        },
+                        onFailure = { e ->
+                            AuthUiState.Error(e.message ?: "Firebase authentication failed")
+                        }
+                    )
                 }
             } else {
-                _authState.value = AuthUiState.Error("Google sign-in failed")
+                _authState.value = AuthUiState.Error("Google ID Token is null")
             }
+        } catch (e: ApiException) {
+            _authState.value = AuthUiState.Error("Google Sign-In failed: ${e.statusCode}")
         } catch (e: Exception) {
-            _authState.value = AuthUiState.Error(e.message ?: "Google sign-in failed")
+            _authState.value = AuthUiState.Error(e.message ?: "An unexpected error occurred")
         }
     }
 

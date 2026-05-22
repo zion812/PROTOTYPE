@@ -105,6 +105,7 @@ dependencies {
     ksp(libs.hilt.compiler)
     implementation(libs.hilt.navigation.compose)
     implementation(libs.hilt.work)
+    implementation(libs.androidx.work.runtime.ktx)
 
     // Timber
     implementation(libs.timber)
