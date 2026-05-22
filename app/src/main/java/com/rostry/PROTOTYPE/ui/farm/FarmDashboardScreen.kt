@@ -168,14 +168,12 @@ fun FarmDashboardScreen(
             item {
                 SummaryCard(
                     totalBirds = state.assets.size,
-                    todayMortality = state.todayLog?.mortalityCount ?: 0
+                    todayMortality = state.todayLogs.sumOf { it.mortalityCount }
                 )
             }
 
-            state.todayLog?.let { log ->
-                item {
-                    TodayLogCard(log = log)
-                }
+            items(state.todayLogs, key = { it.logId }) { log ->
+                TodayLogCard(log = log)
             }
 
             item {

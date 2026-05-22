@@ -32,7 +32,7 @@ class FarmViewModel @Inject constructor(
 
     init {
         loadAssets()
-        loadTodayLog()
+        loadTodayLogs()
     }
 
     fun loadAssets() {
@@ -44,10 +44,10 @@ class FarmViewModel @Inject constructor(
         }
     }
 
-    fun loadTodayLog() {
+    fun loadTodayLogs() {
         viewModelScope.launch {
-            farmRepository.getTodayLog(userId).collect { log ->
-                _uiState.value = _uiState.value.copy(todayLog = log)
+            farmRepository.getTodayLogs(userId).collect { logs ->
+                _uiState.value = _uiState.value.copy(todayLogs = logs)
             }
         }
     }
@@ -78,7 +78,10 @@ class FarmViewModel @Inject constructor(
                     createdAt = System.currentTimeMillis()
                 )
                 farmRepository.createDailyLog(log)
-                _uiState.value = _uiState.value.copy(isLoading = false, todayLog = log)
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    todayLogs = _uiState.value.todayLogs + log
+                )
                 onSaved()
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(

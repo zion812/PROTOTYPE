@@ -51,7 +51,7 @@ class FarmRepository @Inject constructor(
     fun getAssets(farmerId: String): Flow<List<FarmAssetEntity>> =
         farmAssetDao.getByFarmer(farmerId)
 
-    fun getTodayLog(farmerId: String): Flow<DailyLogEntity?> {
+    fun getTodayLogs(farmerId: String): Flow<List<DailyLogEntity>> {
         val cal = Calendar.getInstance().apply {
             set(Calendar.HOUR_OF_DAY, 0)
             set(Calendar.MINUTE, 0)

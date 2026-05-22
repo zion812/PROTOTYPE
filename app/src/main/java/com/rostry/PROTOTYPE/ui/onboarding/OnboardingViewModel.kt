@@ -1,5 +1,6 @@
 package com.rostry.prototype.ui.onboarding
 
+import android.app.Application
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -14,6 +15,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.io.File
 import javax.inject.Inject
 
 data class OnboardingUiState(
@@ -32,6 +34,7 @@ data class OnboardingUiState(
 
 @HiltViewModel
 class OnboardingViewModel @Inject constructor(
+    private val application: Application,
     private val userRepository: UserRepository,
     private val farmRepository: FarmRepository,
     private val firestore: FirebaseFirestore
@@ -127,12 +130,14 @@ class OnboardingViewModel @Inject constructor(
         viewModelScope.launch {
             _state.value = _state.value.copy(isSaving = true, saveError = null)
 
+            val imageUrl = _state.value.photoUri?.let { copyToInternalStorage(it) }
+
             val entity = FarmAssetEntity(
                 farmerId = userId,
                 name = name,
                 breed = _state.value.breed.trim(),
                 birdType = _state.value.birdType,
-                imageUrl = _state.value.photoUri?.toString(),
+                imageUrl = imageUrl,
                 createdAt = System.currentTimeMillis()
             )
 
@@ -151,5 +156,23 @@ class OnboardingViewModel @Inject constructor(
 
     fun resetBirdSaved() {
         _state.value = _state.value.copy(birdSaved = false)
+    }
+
+    private fun copyToInternalStorage(uri: Uri): String? {
+        return try {
+            val inputStream = application.contentResolver.openInputStream(uri)
+                ?: return null
+            val dir = File(application.filesDir, "bird_photos")
+            dir.mkdirs()
+            val file = File(dir, "bird_${System.currentTimeMillis()}.jpg")
+            inputStream.use { input ->
+                file.outputStream().use { output ->
+                    input.copyTo(output)
+                }
+            }
+            "file://${file.absolutePath}"
+        } catch (e: Exception) {
+            null
+        }
     }
 }

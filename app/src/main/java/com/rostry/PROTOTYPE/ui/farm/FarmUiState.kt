@@ -5,7 +5,7 @@ import com.rostry.prototype.data.local.entity.FarmAssetEntity
 
 data class FarmUiState(
     val assets: List<FarmAssetEntity> = emptyList(),
-    val todayLog: DailyLogEntity? = null,
+    val todayLogs: List<DailyLogEntity> = emptyList(),
     val pendingSyncCount: Int = 0,
     val lastSyncAt: Long? = null,
     val isLoading: Boolean = false,
