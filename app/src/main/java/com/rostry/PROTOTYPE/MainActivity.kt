@@ -11,11 +11,24 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import coil.Coil
+import coil.ImageLoader
+import com.rostry.prototype.telegram.TelegramApi
+import com.rostry.prototype.telegram.TelegramImageFetcher
 import com.rostry.prototype.ui.theme.RostryPrototypeTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val telegramApi = TelegramApi()
+        val imageLoader = ImageLoader.Builder(this)
+            .components {
+                add(TelegramImageFetcher.Factory(telegramApi))
+            }
+            .build()
+        Coil.setImageLoader(imageLoader)
+
         enableEdgeToEdge()
         setContent {
             RostryPrototypeTheme {

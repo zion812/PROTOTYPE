@@ -20,6 +20,9 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "TELEGRAM_BOT_TOKEN", "\"\"")
+        buildConfigField("String", "TELEGRAM_CHANNEL_ID", "\"\"")
     }
 
     buildTypes {
@@ -42,6 +45,7 @@ android {
     }
 
     buildFeatures {
+        buildConfig = true
         compose = true
     }
 }
