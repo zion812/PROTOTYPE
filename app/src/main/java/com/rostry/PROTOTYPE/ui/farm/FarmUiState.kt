@@ -1,11 +1,11 @@
 package com.rostry.prototype.ui.farm
 
-import com.rostry.prototype.domain.model.DailyLog
-import com.rostry.prototype.domain.model.FarmAsset
+import com.rostry.prototype.data.local.entity.DailyLogEntity
+import com.rostry.prototype.data.local.entity.FarmAssetEntity
 
 data class FarmUiState(
-    val assets: List<FarmAsset> = emptyList(),
-    val todayLog: DailyLog? = null,
+    val assets: List<FarmAssetEntity> = emptyList(),
+    val todayLog: DailyLogEntity? = null,
     val pendingSyncCount: Int = 0,
     val lastSyncAt: Long? = null,
     val isLoading: Boolean = false,

@@ -4,9 +4,10 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
+import com.rostry.prototype.data.local.entity.DailyLogEntity
 import com.rostry.prototype.data.repo.FarmRepository
-import com.rostry.prototype.data.repo.SyncRepository
-import com.rostry.prototype.domain.model.DailyLog
+import com.rostry.prototype.sync.SyncManager
+import com.rostry.prototype.sync.SyncState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,11 +19,13 @@ import javax.inject.Inject
 @HiltViewModel
 class FarmViewModel @Inject constructor(
     private val farmRepository: FarmRepository,
-    private val syncRepository: SyncRepository
+    private val syncManager: SyncManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(FarmUiState())
     val uiState: StateFlow<FarmUiState> = _uiState.asStateFlow()
+
+    val syncState: StateFlow<SyncState> = syncManager.syncState
 
     private val userId: String
         get() = FirebaseAuth.getInstance().currentUser?.uid ?: ""
@@ -43,8 +46,9 @@ class FarmViewModel @Inject constructor(
 
     fun loadTodayLog() {
         viewModelScope.launch {
-            val log = farmRepository.getTodayLog(userId)
-            _uiState.value = _uiState.value.copy(todayLog = log)
+            farmRepository.getTodayLog(userId).collect { log ->
+                _uiState.value = _uiState.value.copy(todayLog = log)
+            }
         }
     }
 
@@ -62,7 +66,7 @@ class FarmViewModel @Inject constructor(
                 set(Calendar.SECOND, 0)
                 set(Calendar.MILLISECOND, 0)
             }
-            val log = DailyLog(
+            val log = DailyLogEntity(
                 farmerId = userId,
                 logDate = cal.timeInMillis,
                 feedKg = feedKg,
@@ -71,35 +75,14 @@ class FarmViewModel @Inject constructor(
                 notes = notes.ifBlank { null },
                 createdAt = System.currentTimeMillis()
             )
-            val result = farmRepository.createDailyLog(log)
-            result.fold(
-                onSuccess = {
-                    _uiState.value = _uiState.value.copy(isLoading = false, todayLog = log)
-                },
-                onFailure = { e ->
-                    _uiState.value = _uiState.value.copy(isLoading = false, error = e.message ?: "Failed to save daily log")
-                }
-            )
+            farmRepository.createDailyLog(log)
+            _uiState.value = _uiState.value.copy(isLoading = false, todayLog = log)
         }
     }
 
     fun triggerSync() {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true)
-            syncRepository.syncAll().fold(
-                onSuccess = {
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        lastSyncAt = System.currentTimeMillis()
-                    )
-                },
-                onFailure = { e ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        error = e.message ?: "Sync failed"
-                    )
-                }
-            )
+            syncManager.syncAll()
         }
     }
 

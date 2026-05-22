@@ -50,7 +50,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
-import com.rostry.prototype.domain.model.FarmAsset
+import com.rostry.prototype.data.local.entity.FarmAssetEntity
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -255,7 +255,7 @@ private fun SyncStatusBar(
 }
 
 @Composable
-private fun BirdListItem(asset: FarmAsset) {
+private fun BirdListItem(asset: FarmAssetEntity) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp)

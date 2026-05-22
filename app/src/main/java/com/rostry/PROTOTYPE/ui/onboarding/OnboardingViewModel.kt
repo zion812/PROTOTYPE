@@ -6,9 +6,9 @@ import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.UserProfileChangeRequest
 import com.google.firebase.firestore.FirebaseFirestore
+import com.rostry.prototype.data.local.entity.FarmAssetEntity
 import com.rostry.prototype.data.repo.FarmRepository
 import com.rostry.prototype.data.repo.UserRepository
-import com.rostry.prototype.domain.model.FarmAsset
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -116,7 +116,7 @@ class OnboardingViewModel @Inject constructor(
         viewModelScope.launch {
             _state.value = _state.value.copy(isSaving = true, saveError = null)
 
-            val asset = FarmAsset(
+            val entity = FarmAssetEntity(
                 farmerId = userId,
                 name = name,
                 breed = _state.value.breed.trim(),
@@ -124,25 +124,15 @@ class OnboardingViewModel @Inject constructor(
                 createdAt = System.currentTimeMillis()
             )
 
-            val result = farmRepository.createAsset(asset)
-            result.fold(
-                onSuccess = {
-                    _state.value = _state.value.copy(
-                        isSaving = false,
-                        birdSaved = true,
-                        birdName = "",
-                        breed = "",
-                        photoUri = null
-                    )
-                    onSuccess()
-                },
-                onFailure = { e ->
-                    _state.value = _state.value.copy(
-                        isSaving = false,
-                        saveError = e.message ?: "Failed to save bird"
-                    )
-                }
+            farmRepository.createFarmAsset(entity)
+            _state.value = _state.value.copy(
+                isSaving = false,
+                birdSaved = true,
+                birdName = "",
+                breed = "",
+                photoUri = null
             )
+            onSuccess()
         }
     }
 
