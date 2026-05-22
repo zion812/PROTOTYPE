@@ -338,13 +338,14 @@ fun DailyLogScreen(
             Button(
                 onClick = {
                     val feed = feedKg.toDoubleOrNull()
+                    saved = false
                     viewModel.createDailyLog(
                         feedKg = feed ?: 0.0,
                         mortalityCount = mortalityCount,
                         notes = notes,
-                        photoUri = photoUri
+                        photoUri = photoUri,
+                        onSaved = { saved = true }
                     )
-                    saved = true
                 },
                 enabled = !state.isLoading,
                 modifier = Modifier

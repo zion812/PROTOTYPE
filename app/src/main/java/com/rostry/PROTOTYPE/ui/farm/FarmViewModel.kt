@@ -56,27 +56,36 @@ class FarmViewModel @Inject constructor(
         feedKg: Double,
         mortalityCount: Int,
         notes: String,
-        photoUri: Uri?
+        photoUri: Uri?,
+        onSaved: () -> Unit = {}
     ) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-            val cal = Calendar.getInstance().apply {
-                set(Calendar.HOUR_OF_DAY, 0)
-                set(Calendar.MINUTE, 0)
-                set(Calendar.SECOND, 0)
-                set(Calendar.MILLISECOND, 0)
+            try {
+                val cal = Calendar.getInstance().apply {
+                    set(Calendar.HOUR_OF_DAY, 0)
+                    set(Calendar.MINUTE, 0)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }
+                val log = DailyLogEntity(
+                    farmerId = userId,
+                    logDate = cal.timeInMillis,
+                    feedKg = feedKg,
+                    mortalityCount = mortalityCount,
+                    photoUrl = photoUri?.toString(),
+                    notes = notes.ifBlank { null },
+                    createdAt = System.currentTimeMillis()
+                )
+                farmRepository.createDailyLog(log)
+                _uiState.value = _uiState.value.copy(isLoading = false, todayLog = log)
+                onSaved()
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = e.message ?: "Failed to save daily log"
+                )
             }
-            val log = DailyLogEntity(
-                farmerId = userId,
-                logDate = cal.timeInMillis,
-                feedKg = feedKg,
-                mortalityCount = mortalityCount,
-                photoUrl = photoUri?.toString(),
-                notes = notes.ifBlank { null },
-                createdAt = System.currentTimeMillis()
-            )
-            farmRepository.createDailyLog(log)
-            _uiState.value = _uiState.value.copy(isLoading = false, todayLog = log)
         }
     }
 

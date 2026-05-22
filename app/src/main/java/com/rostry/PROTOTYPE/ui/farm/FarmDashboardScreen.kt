@@ -60,6 +60,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.rostry.prototype.R
+import com.rostry.prototype.data.local.entity.DailyLogEntity
 import com.rostry.prototype.data.local.entity.FarmAssetEntity
 import com.rostry.prototype.sync.SyncState
 import java.text.SimpleDateFormat
@@ -169,6 +170,12 @@ fun FarmDashboardScreen(
                     totalBirds = state.assets.size,
                     todayMortality = state.todayLog?.mortalityCount ?: 0
                 )
+            }
+
+            state.todayLog?.let { log ->
+                item {
+                    TodayLogCard(log = log)
+                }
             }
 
             item {
@@ -310,6 +317,66 @@ private fun SummaryCard(
                     text = "Mortality",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun TodayLogCard(log: DailyLogEntity) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Default.EditNote,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Today's Log",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Column {
+                    Text("Feed", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("${log.feedKg ?: 0.0} kg", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    Text("Mortality", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("${log.mortalityCount}", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, color = if (log.mortalityCount > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface)
+                }
+            }
+            log.notes?.let { notes ->
+                if (notes.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Notes", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(notes, style = MaterialTheme.typography.bodySmall)
+                }
+            }
+            if (log.photoUrl != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("Photo attached", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+            }
+            if (log.dirty) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    "Pending sync",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.error,
+                    fontWeight = FontWeight.Medium
                 )
             }
         }
