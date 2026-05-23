@@ -66,7 +66,8 @@ class SyncManager @Inject constructor(
             val file = File(imageUrl.removePrefix("file://"))
             try {
                 val tgRef = telegramApi.uploadPhoto(BuildConfig.TELEGRAM_CHANNEL_ID, file).getOrThrow()
-                imageUrl = tgRef
+                val fileId = tgRef.removePrefix("tg://").substringBefore("@")
+                imageUrl = telegramApi.resolveUrl(fileId).getOrThrow()
             } catch (e: Exception) {
                 Log.w(TAG, "Telegram upload failed for ${asset.assetId}, pushing without image", e)
                 imageUrl = ""
@@ -94,7 +95,8 @@ class SyncManager @Inject constructor(
             val file = File(photoUrl.removePrefix("file://"))
             try {
                 val tgRef = telegramApi.uploadPhoto(BuildConfig.TELEGRAM_CHANNEL_ID, file).getOrThrow()
-                photoUrl = tgRef
+                val fileId = tgRef.removePrefix("tg://").substringBefore("@")
+                photoUrl = telegramApi.resolveUrl(fileId).getOrThrow()
             } catch (e: Exception) {
                 Log.w(TAG, "Telegram upload failed for log ${log.logId}, pushing without photo", e)
                 photoUrl = ""

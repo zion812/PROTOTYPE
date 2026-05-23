@@ -161,12 +161,15 @@ class OnboardingViewModel @Inject constructor(
     }
 
     private fun copyToInternalStorage(uri: Uri): String? {
+        val dir = File(application.filesDir, "bird_photos")
+        dir.mkdirs()
+        val file = File(dir, "bird_${System.currentTimeMillis()}.jpg")
         return try {
             val inputStream = application.contentResolver.openInputStream(uri)
-                ?: return null
+                ?: return fallbackCopy(uri, file)
             val bitmap = BitmapFactory.decodeStream(inputStream)
             inputStream.close()
-            if (bitmap == null) return null
+            if (bitmap == null) return fallbackCopy(uri, file)
 
             val maxDimension = 1920
             val scale = minOf(
@@ -179,10 +182,6 @@ class OnboardingViewModel @Inject constructor(
                 bitmap.width to bitmap.height
             }
 
-            val dir = File(application.filesDir, "bird_photos")
-            dir.mkdirs()
-            val file = File(dir, "bird_${System.currentTimeMillis()}.jpg")
-
             val scaled = if (scale < 1f) {
                 Bitmap.createScaledBitmap(bitmap, width, height, true)
             } else {
@@ -194,6 +193,19 @@ class OnboardingViewModel @Inject constructor(
             if (scaled !== bitmap) scaled.recycle()
             bitmap.recycle()
 
+            "file://${file.absolutePath}"
+        } catch (e: Exception) {
+            fallbackCopy(uri, file)
+        }
+    }
+
+    private fun fallbackCopy(uri: Uri, file: File): String? {
+        return try {
+            application.contentResolver.openInputStream(uri)?.use { input ->
+                file.outputStream().use { output ->
+                    input.copyTo(output)
+                }
+            }
             "file://${file.absolutePath}"
         } catch (e: Exception) {
             null
